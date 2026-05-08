@@ -1,0 +1,14 @@
+# with litellm
+#LLM_BASE_URL=http://localhost:4000/v1
+#LLM_MODEL=gpt-5.4-mini
+#LLM_API_KEY=sk-1234
+
+# with claude
+#LLM_BASE_URL=https://api.anthropic.com/v1
+#LLM_MODEL=claude-haiku-4-5
+#LLM_API_KEY=sk-xxx
+
+# with ollama
+LLM_BASE_URL=http://localhost:11434/v1
+LLM_MODEL=gpt-oss:20b
+LLM_API_KEY=none
