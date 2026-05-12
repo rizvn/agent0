@@ -1,6 +1,6 @@
 module agent0
 
-go 1.24.11
+go 1.26.1
 
 require (
 	github.com/joho/godotenv v1.5.1

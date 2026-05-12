@@ -15,6 +15,8 @@ func (e *Err) Error() string {
 
 // NewErr Returns a new error with message contaning the funcName and line number
 // of where the error occured, this is determined from caller of this method
+// message is the error message to include in the error
+// wrapErr is the error to wrap, this will be included in the message of the returned error
 func NewErr(message string, wrapErr error) *Err {
 	// get refenece to caller function
 	pc, _, line, _ := runtime.Caller(1)
