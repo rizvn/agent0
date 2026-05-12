@@ -9,10 +9,11 @@ import (
 )
 
 func TestAgent(t *testing.T) {
+	// Load config from test env from file
 	c, err := NewConfigFromEnv("Agent_test.env")
 	if err != nil {
 		t.Log(err)
-		log.Default().Print("Skipping test")
+		log.Default().Print("Skipping test no Agent_test.env found")
 		return
 	}
 
