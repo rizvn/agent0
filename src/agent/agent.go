@@ -92,7 +92,7 @@ func (a *Agent) generateContext() context.Context {
 
 func (a *Agent) Loop() error {
 	scanner := bufio.NewScanner(os.Stdin)
-	fmt.Print("Please enter your prompt:")
+	fmt.Print("Hi, How can I help you today?:")
 	for {
 		fmt.Printf("\n>> ")
 
