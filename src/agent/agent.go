@@ -177,7 +177,8 @@ func (a *Agent) GenerateResponse(prompt string, out chan<- string, streamInterme
 				toolName := call.Function.Name
 				for _, agentTool := range a.tools {
 					if agentTool.Definition().Function.Name == toolName {
-						slog.Info("toolcall", "tool", toolName)
+						slog.Info("tool call", "tool", toolName, "arguments", call.Function.Arguments)
+
 						err := agentTool.Call(ctx, &call, &a.messages)
 						if err != nil {
 							return err
