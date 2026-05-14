@@ -13,3 +13,6 @@ LLM_API_KEY=none
 # LLM_MODEL=gpt-4
 # LLM_API_KEY=your_openai_api_key
 
+
+# Agent Configuration
+LOG_LEVEL=DEBUG

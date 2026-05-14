@@ -11,6 +11,7 @@ type Config struct {
 	LLMApiKey     string
 	LLMApiBaseUrl string
 	LLMModel      string
+	LogLevel      string
 }
 
 func NewConfigFromEnv(filePath string) (*Config, error) {
@@ -23,6 +24,7 @@ func NewConfigFromEnv(filePath string) (*Config, error) {
 	config.LLMApiBaseUrl = os.Getenv("LLM_BASE_URL")
 	config.LLMApiKey = os.Getenv("LLM_API_KEY")
 	config.LLMModel = os.Getenv("LLM_MODEL")
+	config.LogLevel = os.Getenv("LOG_LEVEL")
 
 	if config.LLMApiBaseUrl == "" {
 		return nil, util.NewErr("Env variable LLM_BASE_URL not found", nil)

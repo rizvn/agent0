@@ -5,6 +5,7 @@ import (
 	"agent0/util"
 	"flag"
 	"log/slog"
+	"os"
 )
 
 func main() {
@@ -13,6 +14,8 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	configureLogging(c.LogLevel)
 
 	// create agent
 	a := agent.NewAgent(c)
@@ -45,4 +48,26 @@ func requestResponse(a *agent.Agent, prompt string) error {
 		return util.NewErr("Unable to generate response", err)
 	}
 	return nil
+}
+
+func configureLogging(logLevel string) {
+	var level slog.Level
+	switch logLevel {
+	case "DEBUG":
+		level = slog.LevelDebug
+	case "INFO":
+		level = slog.LevelInfo
+	case "ERROR":
+		level = slog.LevelError
+	default:
+		level = slog.LevelInfo
+	}
+
+	opts := &slog.HandlerOptions{
+		Level: level,
+	}
+
+	logger := slog.NewJSONHandler(os.Stdout, opts)
+	slog.SetDefault(slog.New(logger))
+
 }
