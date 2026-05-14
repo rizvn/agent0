@@ -1,0 +1,15 @@
+# ollama
+LLM_BASE_URL=http://localhost:11434/v1
+LLM_MODEL=gpt-oss:20b
+LLM_API_KEY=none
+
+# anthropic
+# LLM_BASE_URL=https://api.anthropic.com/v1
+# LLM_MODEL=claude-2
+# LLM_API_KEY=your_anthropic_api_key
+
+# openai
+# LLM_BASE_URL=https://api.openai.com/v1
+# LLM_MODEL=gpt-4
+# LLM_API_KEY=your_openai_api_key
+
