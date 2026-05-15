@@ -60,6 +60,6 @@ func configureLogging(logLevel string) {
 		Level: level,
 	}
 
-	logger := slog.NewJSONHandler(os.Stdout, opts)
+	logger := slog.NewTextHandler(os.Stdout, opts)
 	slog.SetDefault(slog.New(logger))
 }
