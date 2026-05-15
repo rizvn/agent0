@@ -310,6 +310,22 @@ func (a *Agent) streamNextMessage(out chan<- string) (*openai.ChatCompletionResp
 	return finalResponse, nil
 }
 
+// DirectResponse sends a prompt to the agent and prints the response to stdout
+func (a *Agent) DirectResponse(ctx context.Context, prompt string) (string, error) {
+	// make channel for output
+	out := make(chan string)
+
+	util.ChannelToStdOut(out)
+
+	if err := a.GenerateResponse(prompt, out, false); err != nil {
+		return "", util.NewErr("Unable to generate response", err)
+	}
+
+	outStr := <-out
+
+	return outStr, nil
+}
+
 // mergeStreamResponse merges a chunk response from the stream into the final chat completion response,
 // this is necessary for tools as they can be streamed back in chunks and we need to merge them together
 // to get the full tool call information.

@@ -2,8 +2,9 @@ package main
 
 import (
 	"agent0/agent"
-	"agent0/util"
+	"context"
 	"flag"
+	"fmt"
 	"log/slog"
 	"os"
 )
@@ -28,9 +29,11 @@ func main() {
 	// if prompt provided on cli
 	if prompt != "" {
 		// request resonse mode
-		if err := requestResponse(a, prompt); err != nil {
+		response, err := a.DirectResponse(context.TODO(), prompt)
+		if err != nil {
 			slog.Error(err.Error(), "err", err)
 		}
+		fmt.Println(response)
 	} else {
 		// interactive mode
 		err = a.Loop()
@@ -38,17 +41,6 @@ func main() {
 			panic(err)
 		}
 	}
-}
-
-// requestResponse sends a prompt to the agent and prints the response to stdout
-func requestResponse(a *agent.Agent, prompt string) error {
-	out := make(chan string)
-	util.ChannelToStdOut(out)
-
-	if err := a.GenerateResponse(prompt, out, true); err != nil {
-		return util.NewErr("Unable to generate response", err)
-	}
-	return nil
 }
 
 // configureLogging sets the global logger based on the provided log level
@@ -64,7 +56,6 @@ func configureLogging(logLevel string) {
 	default:
 		level = slog.LevelInfo
 	}
-
 	opts := &slog.HandlerOptions{
 		Level: level,
 	}
