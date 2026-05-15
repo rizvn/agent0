@@ -15,19 +15,32 @@ import (
 	"github.com/sashabaranov/go-openai"
 )
 
+// Agent is the main struct that holds the state of the agent,
+//
+//	including the conversation history, available tools, and configuration.
 type Agent struct {
-	messages   []openai.ChatCompletionMessage
-	tools      []tool.Tool
-	toolDefs   []openai.Tool
-	config     *Config
-	client     *openai.Client
-	tenantId   string
-	userId     string
+	messages []openai.ChatCompletionMessage
+	tools    []tool.Tool
+	toolDefs []openai.Tool
+	config   *Config
+	client   *openai.Client
+
+	// optional context for tools to use,
+	// e.g. for multi tenant applications you might want
+	// to pass tenant id and user id to tools so they can do
+	// access control or log which user is doing what.
+	tenantId string
+	userId   string
+
+	// this is the key for passing context to tools
 	dataCtxKey DataCtxKey
 }
 
+// this is for passing context to tools.
 type DataCtxKey struct{}
 
+// NewAgent creates a new instance of the Agent struct,
+// initializes the LLM client and registers the available tools.
 func NewAgent(config *Config) *Agent {
 	a := &Agent{
 		config:     config,
@@ -35,7 +48,10 @@ func NewAgent(config *Config) *Agent {
 		messages:   make([]openai.ChatCompletionMessage, 1),
 	}
 
+	// setup llm client
 	a.setupLLMClient()
+
+	// register tools
 	a.registerTools()
 
 	// default system message
@@ -43,12 +59,15 @@ func NewAgent(config *Config) *Agent {
 	return a
 }
 
+// setupLLMClient initializes the OpenAI client with the
+// provided API key and base URL from the configuration.
 func (a *Agent) setupLLMClient() {
 	llmConf := openai.DefaultConfig(a.config.LLMApiKey)
 	llmConf.BaseURL = a.config.LLMApiBaseUrl
 	a.client = openai.NewClientWithConfig(llmConf)
 }
 
+// registerTools initializes the list of tools that the agent can use,
 func (a *Agent) registerTools() {
 	a.tools = []tool.Tool{
 		generic.NewReadFile(),
@@ -64,6 +83,9 @@ func (a *Agent) registerTools() {
 	a.toolDefs = toolDefs
 }
 
+// SetSystemMessage sets the system message for the agent,
+// which provides context and instructions to the LLM.
+// it may be used provide a planning prompt or to set the behavior of the agent.
 func (a *Agent) SetSystemMessage(message string) {
 	system := openai.ChatCompletionMessage{
 		Role:    openai.ChatMessageRoleSystem,
@@ -72,6 +94,7 @@ func (a *Agent) SetSystemMessage(message string) {
 	a.messages[0] = system
 }
 
+// addUserMessage adds a user message to the conversation history.
 func (a *Agent) addUserMessage(prompt string) {
 	// add user message to chat history
 	message := openai.ChatCompletionMessage{
@@ -81,6 +104,8 @@ func (a *Agent) addUserMessage(prompt string) {
 	a.messages = append(a.messages, message)
 }
 
+// generateContext creates a new context with the tenant and user information,
+// additional information can be added to the context as needed
 func (a *Agent) generateContext() context.Context {
 	data := map[string]any{
 		"tenant_id": a.tenantId,
@@ -90,6 +115,8 @@ func (a *Agent) generateContext() context.Context {
 	return ctx
 }
 
+// Loop starts the main interaction loop of the agent
+// where it continuously prompts the user for input,
 func (a *Agent) Loop() error {
 	scanner := bufio.NewScanner(os.Stdin)
 	fmt.Print("Hi, How can I help you today?:")
@@ -124,6 +151,11 @@ func (a *Agent) Loop() error {
 	}
 }
 
+// GenerateResponse takes a user prompt and generates a response using the LLM,
+// it handles tool calls and updates the conversation history accordingly.
+// if streamIntermediateMessages is true, it will stream intermediate messages
+// back to the caller as they are generated, otherwise it will wait
+// until the final response is generated before returning.
 func (a *Agent) GenerateResponse(prompt string, out chan<- string, streamIntermediateMessages bool) error {
 	defer func() {
 		// close channel when retuning
@@ -131,7 +163,10 @@ func (a *Agent) GenerateResponse(prompt string, out chan<- string, streamInterme
 		close(out)
 	}()
 
+	// add user message to chat history
 	a.addUserMessage(prompt)
+
+	// generate context for tools to use
 	ctx := a.generateContext()
 
 	// agent loop
@@ -141,11 +176,13 @@ func (a *Agent) GenerateResponse(prompt string, out chan<- string, streamInterme
 		var err error
 
 		if streamIntermediateMessages {
+			// stream next message and stream intermediate messages back to caller
 			resp, err = a.streamNextMessage(out)
 			if err != nil {
 				return util.NewErr("Unable stream next message", err)
 			}
 		} else {
+			// if not streaming intermediate messages, just get the next message
 			resp, err = a.getNextMessage()
 		}
 
@@ -153,6 +190,7 @@ func (a *Agent) GenerateResponse(prompt string, out chan<- string, streamInterme
 			return util.NewErr("Failed whilst receiving chat completion", err)
 		}
 
+		// if there are no choices, break out of loop
 		if len(resp.Choices) == 0 {
 			// break out of loop if there are no tool calls
 			break
@@ -195,6 +233,8 @@ func (a *Agent) GenerateResponse(prompt string, out chan<- string, streamInterme
 	return nil
 }
 
+// getNextMessage gets the next message from the LLM based on the current
+// conversation history and tool definitions.
 func (a *Agent) getNextMessage() (*openai.ChatCompletionResponse, error) {
 	// get next message
 	resp, err := a.client.CreateChatCompletion(context.Background(),
@@ -210,6 +250,8 @@ func (a *Agent) getNextMessage() (*openai.ChatCompletionResponse, error) {
 	return &resp, nil
 }
 
+// streamNextMessage streams the next message from the LLM, sending intermediate
+// messages back to the caller as they are generated.
 func (a *Agent) streamNextMessage(out chan<- string) (*openai.ChatCompletionResponse, error) {
 	stream, err := a.client.CreateChatCompletionStream(context.Background(),
 		openai.ChatCompletionRequest{
@@ -232,7 +274,7 @@ func (a *Agent) streamNextMessage(out chan<- string) (*openai.ChatCompletionResp
 
 	//var assistantContent strings.Builder
 	for {
-		// wait to recieve chuck
+		// wait to recieve chunk
 		chunk, err := stream.Recv()
 		if err == io.EOF {
 			break
@@ -260,6 +302,7 @@ func (a *Agent) streamNextMessage(out chan<- string) (*openai.ChatCompletionResp
 	return finalResponse, nil
 }
 
+// Below is an example implementation of a Bash tool that can be used by the agent.
 func mergeStreamResponse(finalResponse *openai.ChatCompletionResponse, chunk *openai.ChatCompletionStreamResponse) error {
 	finalResponse.Model = chunk.Model
 	finalResponse.ID = chunk.ID
