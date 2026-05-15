@@ -120,7 +120,7 @@ func (a *Agent) Loop() error {
 	scanner := bufio.NewScanner(os.Stdin)
 	fmt.Print("Hi, How can I help you today?:")
 	for {
-		fmt.Printf("\n>> ")
+		fmt.Printf("\n\n>> ")
 
 		// read line
 		if !scanner.Scan() {
