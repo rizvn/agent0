@@ -15,9 +15,8 @@ import (
 	"github.com/sashabaranov/go-openai"
 )
 
-// Agent is the main struct that holds the state of the agent,
-//
-//	including the conversation history, available tools, and configuration.
+// Agent is the main struct that holds the state of the agent
+// including the conversation history, available tools, and configuration.
 type Agent struct {
 	messages []openai.ChatCompletionMessage
 	tools    []tool.Tool
@@ -302,11 +301,13 @@ func (a *Agent) streamNextMessage(out chan<- string) (*openai.ChatCompletionResp
 	return finalResponse, nil
 }
 
-// Below is an example implementation of a Bash tool that can be used by the agent.
+// mergeStreamResponse merges a chunk response from the stream into the final chat completion response,
+// this is necessary for tools as they can be streamed back in chunks and we need to merge them together
+// to get the full tool call information.
 func mergeStreamResponse(finalResponse *openai.ChatCompletionResponse, chunk *openai.ChatCompletionStreamResponse) error {
 	finalResponse.Model = chunk.Model
 	finalResponse.ID = chunk.ID
-	finalResponse.Object = chunk.Model
+	finalResponse.Object = chunk.Object
 	finalResponse.Created = chunk.Created
 	finalResponse.Model = chunk.Model
 
