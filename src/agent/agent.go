@@ -198,35 +198,44 @@ func (a *Agent) GenerateResponse(prompt string, out chan<- string, streamInterme
 		// resp choices
 		for _, choice := range resp.Choices {
 
+			// stop if there are no tool calls or finish reason is stop
 			if len(choice.Message.ToolCalls) == 0 || choice.FinishReason == "stop" {
-				//note: finish reason can also be tool_calls
-				// no tool calls, continue to next message
 				if !streamIntermediateMessages {
 					fmt.Println(choice.Message.Content)
 				}
 				return nil
 			}
 
-			// record response
+			// record response message in conversation history
 			a.messages = append(a.messages, choice.Message)
 
+			// handle tool calls
 			for _, call := range choice.Message.ToolCalls {
-				toolName := call.Function.Name
-				for _, agentTool := range a.tools {
-					if agentTool.Definition().Function.Name == toolName {
-						slog.Debug("tool call", "tool", toolName, "arguments", call.Function.Arguments)
-						slog.Debug("using", "tool", toolName)
-
-						err := agentTool.Call(ctx, &call, &a.messages)
-						if err != nil {
-							return err
-						}
-
-						//end  of tool call exit
-						break
-					}
+				err = a.handleToolCall(ctx, call, &a.messages)
+				if err != nil {
+					slog.Error("failed to handle tool call", "error", err, "tool_call", call)
 				}
 			}
+		}
+	}
+	return nil
+}
+
+// handleToolCall takes a tool call from the LLM and executes the corresponding tool,
+func (a *Agent) handleToolCall(ctx context.Context, toolCall openai.ToolCall, messages *[]openai.ChatCompletionMessage) error {
+	toolName := toolCall.Function.Name
+	for _, agentTool := range a.tools {
+		if agentTool.Definition().Function.Name == toolName {
+			slog.Debug("tool call", "tool", toolName, "arguments", toolCall.Function.Arguments)
+			slog.Debug("using", "tool", toolName)
+
+			err := agentTool.Call(ctx, &toolCall, messages)
+			if err != nil {
+				return err
+			}
+
+			//end  of tool call exit
+			return nil
 		}
 	}
 	return nil

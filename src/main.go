@@ -40,6 +40,7 @@ func main() {
 	}
 }
 
+// requestResponse sends a prompt to the agent and prints the response to stdout
 func requestResponse(a *agent.Agent, prompt string) error {
 	out := make(chan string)
 	util.ChannelToStdOut(out)
@@ -50,6 +51,7 @@ func requestResponse(a *agent.Agent, prompt string) error {
 	return nil
 }
 
+// configureLogging sets the global logger based on the provided log level
 func configureLogging(logLevel string) {
 	var level slog.Level
 	switch logLevel {
@@ -69,5 +71,4 @@ func configureLogging(logLevel string) {
 
 	logger := slog.NewJSONHandler(os.Stdout, opts)
 	slog.SetDefault(slog.New(logger))
-
 }
