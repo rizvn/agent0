@@ -43,3 +43,16 @@ cd bin
 
       - Tools are registered with the agent in `agent.go`
 
+
+### How it works
+```mermaid
+flowchart LR
+    a[agent0] -- 1. Prompts user --> u[User]
+    u[User] -- 2. What is the current time? --> a[agent0]
+    a[agent0] -- 3. Calls llm with user prompt --> l[LLM]
+    l -- 4. Returns response with tool call --> a
+    a -- 5. Calls the tool --> a
+    a -- 6. tells llm about tool result --> l
+    l -- 7. Returns final response --> a
+    a -- 8. Returns final response to user --> u
+```
