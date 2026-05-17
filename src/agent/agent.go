@@ -227,8 +227,6 @@ func (a *Agent) handleToolCall(ctx context.Context, toolCall openai.ToolCall, me
 	for _, agentTool := range a.tools {
 		if agentTool.Definition().Function.Name == toolName {
 			slog.Debug("tool call", "tool", toolName, "arguments", toolCall.Function.Arguments)
-			slog.Debug("using", "tool", toolName)
-
 			err := agentTool.Call(ctx, &toolCall, messages)
 			if err != nil {
 				return err
