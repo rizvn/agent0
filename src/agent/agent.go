@@ -111,6 +111,7 @@ func (a *Agent) generateContext() context.Context {
 		"user_id":   a.userId,
 	}
 	ctx := context.WithValue(context.Background(), a.dataCtxKey, data)
+
 	return ctx
 }
 

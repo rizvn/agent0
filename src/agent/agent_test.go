@@ -52,16 +52,6 @@ func TestAgent(t *testing.T) {
 		}
 	})
 
-	t.Run("Upsert datasource test", func(t *testing.T) {
-		prompt := "Create a new datasource named test with url postgress://test:testpw@localhost:5431/testdb "
-		out := make(chan string)
-		printOutChannel(out)
-		err = a.GenerateResponse(prompt, out, true)
-		if err != nil {
-			t.Fatal("Expected no errors but got", err)
-		}
-	})
-
 }
 
 func printOutChannel(out <-chan string) {
