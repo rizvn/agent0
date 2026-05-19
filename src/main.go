@@ -13,6 +13,7 @@ func main() {
 	//read config from env
 	c, err := agent.NewConfigFromEnv(".env")
 	if err != nil {
+		//exit if unable to load configuration
 		panic(err)
 	}
 
@@ -38,6 +39,7 @@ func main() {
 		// interactive mode
 		err = a.Loop()
 		if err != nil {
+			// exit if agent loop fails
 			panic(err)
 		}
 	}
