@@ -2,21 +2,14 @@ package util
 
 import (
 	"fmt"
-	"log/slog"
-	"os"
+	"runtime"
 )
 
-// ChannelToStdOut writes the contents of a channel to stdout.
-// - out is the channel to read from. It is expected that the channel will be closed when done,
-// and this function will return at that point.
-func ChannelToStdOut(out <-chan string) {
-	// write output streamNextMessage
-	go func() {
-		for s := range out {
-			_, err := fmt.Fprint(os.Stdout, s)
-			if err != nil {
-				slog.Error("Unable to write to stdout", "err", err)
-			}
-		}
-	}()
+// DetailedError creates a new error with a message and wraps the original error
+// with additional context about where the error occurred.
+func DetailedError(message string, wrapErr error) error {
+	// get refenece to caller function
+	pc, _, line, _ := runtime.Caller(1)
+	funcName := runtime.FuncForPC(pc).Name()
+	return fmt.Errorf("%s", fmt.Sprintf("\nError at:%s Line:%d\nMessage:%s\n%v", funcName, line, message, wrapErr))
 }

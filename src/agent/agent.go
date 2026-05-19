@@ -23,28 +23,14 @@ type Agent struct {
 	toolDefs []openai.Tool
 	config   *Config
 	client   *openai.Client
-
-	// optional context for tools to use,
-	// e.g. for multi tenant applications you might want
-	// to pass tenant id and user id to tools so they can do
-	// access control or log which user is doing what.
-	tenantId string
-	userId   string
-
-	// this is the key for passing context to tools
-	dataCtxKey DataCtxKey
 }
-
-// this is for passing context to tools.
-type DataCtxKey struct{}
 
 // NewAgent creates a new instance of the Agent struct,
 // initializes the LLM client and registers the available tools.
 func NewAgent(config *Config) *Agent {
 	a := &Agent{
-		config:     config,
-		dataCtxKey: DataCtxKey{},
-		messages:   make([]openai.ChatCompletionMessage, 1),
+		config:   config,
+		messages: make([]openai.ChatCompletionMessage, 1),
 	}
 
 	// setup llm client
@@ -103,18 +89,6 @@ func (a *Agent) addUserMessage(prompt string) {
 	a.messages = append(a.messages, message)
 }
 
-// generateContext creates a new context with the tenant and user information,
-// additional information can be added to the context as needed
-func (a *Agent) generateContext() context.Context {
-	data := map[string]any{
-		"tenant_id": a.tenantId,
-		"user_id":   a.userId,
-	}
-	ctx := context.WithValue(context.Background(), a.dataCtxKey, data)
-
-	return ctx
-}
-
 // Loop starts the main interaction loop of the agent
 // where it continuously prompts the user for input,
 func (a *Agent) Loop() error {
@@ -126,7 +100,7 @@ func (a *Agent) Loop() error {
 		// read line
 		if !scanner.Scan() {
 			if err := scanner.Err(); err != nil {
-				return util.NewErr("Unable to read input", err)
+				return util.DetailedError("Unable to read input", err)
 			}
 		}
 
@@ -143,7 +117,7 @@ func (a *Agent) Loop() error {
 		}
 
 		out := make(chan string)
-		util.ChannelToStdOut(out)
+		channelToStdOut(out)
 
 		if err := a.GenerateResponse(prompt, out, true); err != nil {
 			slog.Error("failed to generate response", "error", err)
@@ -166,9 +140,6 @@ func (a *Agent) GenerateResponse(prompt string, out chan<- string, streamInterme
 	// add user message to chat history
 	a.addUserMessage(prompt)
 
-	// generate context for tools to use
-	ctx := a.generateContext()
-
 	// agent loop
 	for {
 		// get next message
@@ -179,7 +150,7 @@ func (a *Agent) GenerateResponse(prompt string, out chan<- string, streamInterme
 			// stream next message and stream intermediate messages back to caller
 			resp, err = a.streamNextMessage(out)
 			if err != nil {
-				return util.NewErr("Unable stream next message", err)
+				return util.DetailedError("Unable stream next message", err)
 			}
 		} else {
 			// if not streaming intermediate messages, just get the next message
@@ -187,7 +158,7 @@ func (a *Agent) GenerateResponse(prompt string, out chan<- string, streamInterme
 		}
 
 		if err != nil {
-			return util.NewErr("Failed whilst receiving chat completion", err)
+			return util.DetailedError("Failed whilst receiving chat completion", err)
 		}
 
 		// if there are no choices, break out of loop
@@ -212,7 +183,7 @@ func (a *Agent) GenerateResponse(prompt string, out chan<- string, streamInterme
 
 			// handle tool calls
 			for _, call := range choice.Message.ToolCalls {
-				err = a.handleToolCall(ctx, call, &a.messages)
+				err = a.handleToolCall(context.Background(), call, &a.messages)
 				if err != nil {
 					slog.Error("failed to handle tool call", "error", err, "tool_call", call)
 				}
@@ -252,7 +223,7 @@ func (a *Agent) getNextMessage() (*openai.ChatCompletionResponse, error) {
 		},
 	)
 	if err != nil {
-		return nil, util.NewErr("Failed whilst receiving chat completion", err)
+		return nil, util.DetailedError("Failed whilst receiving chat completion", err)
 	}
 	return &resp, nil
 }
@@ -292,7 +263,7 @@ func (a *Agent) streamNextMessage(out chan<- string) (*openai.ChatCompletionResp
 
 		err = mergeStreamResponse(finalResponse, &chunk)
 		if err != nil {
-			return nil, util.NewErr("Unable to mergeStreamResponse chunk response to chat completion", nil)
+			return nil, util.DetailedError("Unable to mergeStreamResponse chunk response to chat completion", nil)
 		}
 
 		if len(chunk.Choices) == 0 {
@@ -314,15 +285,30 @@ func (a *Agent) DirectResponse(ctx context.Context, prompt string) (string, erro
 	// make channel for output
 	out := make(chan string)
 
-	util.ChannelToStdOut(out)
+	channelToStdOut(out)
 
 	if err := a.GenerateResponse(prompt, out, false); err != nil {
-		return "", util.NewErr("Unable to generate response", err)
+		return "", util.DetailedError("Unable to generate response", err)
 	}
 
 	outStr := <-out
 
 	return outStr, nil
+}
+
+// ChannelToStdOut writes the contents of a channel to stdout.
+// - out is the channel to read from. It is expected that the channel will be closed when done,
+// and this function will return at that point.
+func channelToStdOut(out <-chan string) {
+	// write output streamNextMessage
+	go func() {
+		for s := range out {
+			_, err := fmt.Fprint(os.Stdout, s)
+			if err != nil {
+				slog.Error("Unable to write to stdout", "err", err)
+			}
+		}
+	}()
 }
 
 // mergeStreamResponse merges a chunk response from the stream into the final chat completion response,

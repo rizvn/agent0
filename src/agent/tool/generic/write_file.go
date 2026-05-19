@@ -58,12 +58,12 @@ func (w *WriteFile) Call(ctx context.Context, toolCall *openai.ToolCall, message
 	args := Args{}
 	err := json.Unmarshal([]byte(toolCall.Function.Arguments), &args)
 	if err != nil {
-		return util.NewErr("Unable to parse function arguments", nil)
+		return util.DetailedError("Unable to parse function arguments", nil)
 	}
 
 	err = writeFile(args.FilePath, args.Content)
 	if err != nil {
-		return util.NewErr(fmt.Sprintf("unable to write file %s", args.FilePath), err)
+		return util.DetailedError(fmt.Sprintf("unable to write file %s", args.FilePath), err)
 	}
 
 	toolResponse := openai.ChatCompletionMessage{

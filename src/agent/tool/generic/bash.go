@@ -50,7 +50,7 @@ func (b *Bash) Call(ctx context.Context, toolCall *openai.ToolCall, messages *[]
 	args := make(map[string]any)
 	err := json.Unmarshal([]byte(toolCall.Function.Arguments), &args)
 	if err != nil {
-		return util.NewErr("unable to parse args", err)
+		return util.DetailedError("unable to parse args", err)
 	}
 	command := args["command"].(string)
 	output, err := bash(command)
@@ -79,7 +79,7 @@ func bash(cmdString string) (string, error) {
 
 	if err != nil {
 		if stderr.Len() != 0 {
-			return "", util.NewErr(fmt.Sprintf("Error running bash command, stderr:%s", stderr.String()), err)
+			return "", util.DetailedError(fmt.Sprintf("Error running bash command, stderr:%s", stderr.String()), err)
 		}
 	}
 

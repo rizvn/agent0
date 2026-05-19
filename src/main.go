@@ -2,6 +2,7 @@ package main
 
 import (
 	"agent0/agent"
+	"agent0/util"
 	"context"
 	"flag"
 	"fmt"
@@ -10,6 +11,12 @@ import (
 )
 
 func main() {
+	err := util.DetailedError("error", fmt.Errorf("wrap error"))
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+
 	//read config from env
 	c, err := agent.NewConfigFromEnv(".env")
 	if err != nil {
