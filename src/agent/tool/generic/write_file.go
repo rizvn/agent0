@@ -45,11 +45,17 @@ func NewWriteFile() *WriteFile {
 	return w
 }
 
+// Definition returns the tool definition
 func (w *WriteFile) Definition() openai.Tool {
 	return w.def
 }
 
-func (w *WriteFile) Call(ctx context.Context, toolCall *openai.ToolCall, messages *[]openai.ChatCompletionMessage) error {
+// Call is called when the tool is invoked by the agent
+func (w *WriteFile) Call(
+	ctx context.Context,
+	toolCall *openai.ToolCall,
+	messages *[]openai.ChatCompletionMessage) error {
+
 	type Args struct {
 		FilePath string `json:"file_path"`
 		Content  string `json:"content"`

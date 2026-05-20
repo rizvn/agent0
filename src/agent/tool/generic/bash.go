@@ -46,7 +46,11 @@ func (b *Bash) Definition() openai.Tool {
 	return b.def
 }
 
-func (b *Bash) Call(ctx context.Context, toolCall *openai.ToolCall, messages *[]openai.ChatCompletionMessage) error {
+func (b *Bash) Call(
+	ctx context.Context,
+	toolCall *openai.ToolCall,
+	messages *[]openai.ChatCompletionMessage) error {
+
 	args := make(map[string]any)
 	err := json.Unmarshal([]byte(toolCall.Function.Arguments), &args)
 	if err != nil {

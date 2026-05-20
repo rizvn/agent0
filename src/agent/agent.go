@@ -130,7 +130,11 @@ func (a *Agent) Loop() error {
 // if streamIntermediateMessages is true, it will stream intermediate messages
 // back to the caller as they are generated, otherwise it will wait
 // until the final response is generated before returning.
-func (a *Agent) GenerateResponse(prompt string, out chan<- string, streamIntermediateMessages bool) error {
+func (a *Agent) GenerateResponse(
+	prompt string,
+	out chan<- string,
+	streamIntermediateMessages bool) error {
+
 	defer func() {
 		// close channel when retuning
 		// from this functon
@@ -193,8 +197,13 @@ func (a *Agent) GenerateResponse(prompt string, out chan<- string, streamInterme
 	return nil
 }
 
-// handleToolCall takes a tool call from the LLM and executes the corresponding tool,
-func (a *Agent) handleToolCall(ctx context.Context, toolCall openai.ToolCall, messages *[]openai.ChatCompletionMessage) error {
+// handleToolCall takes a tool call from the LLM
+// and executes the corresponding tool
+func (a *Agent) handleToolCall(
+	ctx context.Context,
+	toolCall openai.ToolCall,
+	messages *[]openai.ChatCompletionMessage) error {
+
 	toolName := toolCall.Function.Name
 	for _, agentTool := range a.tools {
 		if agentTool.Definition().Function.Name == toolName {
@@ -230,7 +239,9 @@ func (a *Agent) getNextMessage() (*openai.ChatCompletionResponse, error) {
 
 // streamNextMessage streams the next message from the LLM, sending intermediate
 // messages back to the caller as they are generated.
-func (a *Agent) streamNextMessage(out chan<- string) (*openai.ChatCompletionResponse, error) {
+func (a *Agent) streamNextMessage(
+	out chan<- string) (*openai.ChatCompletionResponse, error) {
+
 	stream, err := a.client.CreateChatCompletionStream(context.Background(),
 		openai.ChatCompletionRequest{
 			Model:    a.config.LLMModel,
@@ -281,7 +292,10 @@ func (a *Agent) streamNextMessage(out chan<- string) (*openai.ChatCompletionResp
 }
 
 // DirectResponse sends a prompt to the agent and prints the response to stdout
-func (a *Agent) DirectResponse(ctx context.Context, prompt string) (string, error) {
+func (a *Agent) DirectResponse(
+	ctx context.Context,
+	prompt string) (string, error) {
+
 	// make channel for output
 	out := make(chan string)
 
@@ -296,8 +310,9 @@ func (a *Agent) DirectResponse(ctx context.Context, prompt string) (string, erro
 	return outStr, nil
 }
 
-// ChannelToStdOut writes the contents of a channel to stdout.
-// - out is the channel to read from. It is expected that the channel will be closed when done,
+// channelToStdOut writes the contents of a channel to stdout.
+// - out is the channel to read from.
+// It is expected that the channel will be closed when done
 // and this function will return at that point.
 func channelToStdOut(out <-chan string) {
 	// write output streamNextMessage
@@ -311,10 +326,14 @@ func channelToStdOut(out <-chan string) {
 	}()
 }
 
-// mergeStreamResponse merges a chunk response from the stream into the final chat completion response,
-// this is necessary for tools as they can be streamed back in chunks and we need to merge them together
+// mergeStreamResponse merges a chunk response from the stream
+// into the final chat completion response this is necessary for tools
+// as they can be streamed back in chunks and we need to merge them together
 // to get the full tool call information.
-func mergeStreamResponse(finalResponse *openai.ChatCompletionResponse, chunk *openai.ChatCompletionStreamResponse) error {
+func mergeStreamResponse(
+	finalResponse *openai.ChatCompletionResponse,
+	chunk *openai.ChatCompletionStreamResponse) error {
+
 	finalResponse.Model = chunk.Model
 	finalResponse.ID = chunk.ID
 	finalResponse.Object = chunk.Object

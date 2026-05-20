@@ -21,7 +21,7 @@ var _ tool.Tool = (*ReadFile)(nil)
 func NewReadFile() *ReadFile {
 	r := &ReadFile{}
 
-	// Define the tool with a function definition that specifies the name, description, and parameters of the tool
+	// define tool definition
 	r.def = openai.Tool{
 		Type: openai.ToolTypeFunction,
 		Function: &openai.FunctionDefinition{
@@ -43,12 +43,18 @@ func NewReadFile() *ReadFile {
 	return r
 }
 
-// Definition returns the tool definition that will be passed to the OpenAI API when registering the tool.
+// Definition returns the tool definition
 func (r *ReadFile) Definition() openai.Tool {
 	return r.def
 }
 
-func (r *ReadFile) Call(ctx context.Context, toolCall *openai.ToolCall, messages *[]openai.ChatCompletionMessage) error {
+// Call is called when the tool is invoked by the agent
+// It receives the context, the tool call information,
+// and a pointer to the messages array.
+func (r *ReadFile) Call(
+	ctx context.Context,
+	toolCall *openai.ToolCall,
+	messages *[]openai.ChatCompletionMessage) error {
 	// define args struct
 	type Args struct {
 		FilePath string `json:"file_path"`
@@ -78,7 +84,8 @@ func (r *ReadFile) Call(ctx context.Context, toolCall *openai.ToolCall, messages
 	return nil
 }
 
-// readFile is a helper function that reads the content of a file given its path and returns it as a string.
+// readFile is a helper function that reads the content
+// of a file given its path and returns it as a string.
 func readFile(path string) (string, error) {
 	content, err := os.ReadFile(path)
 	if err != nil {
