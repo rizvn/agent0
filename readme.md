@@ -2,25 +2,54 @@ This project demontrates building a simple ai agent with go lang
 
 ### Prerequisites
 - Go 1.26 or later
-- Make to build the application
 
-### To Build
-Make is used to build the application
+
+### To Build 
+Create bin folder at same level as src
 ```bash
-cd src 
-make build
+mkdir bin
 ```
 
-This will build the binary in the `bin` directory and copy env-example file
+Folder structure should look like this
+```
+|-- bin
+|-- src
+    |-- main.go
+```
+
+Build commands
+```
+cd src
+go build -o ../bin/agent0 main.go
+```
+
+
+Copy env-example to bin
+```bash
+cp env-example ../bin/.env
+```
+
+Update .env with your llm settings for example  
+```
+LLM_BASE_URL=your-llm-base-url
+LLM_MODEL=your-llm-model
+LLM_API_KEY=your-llm-api-key
+```
 
 ### To Run
-- update `env-example` with settings to to your llm model
-- rename `env-example` to `.env`
-- run the binary
 ```bash
 cd bin
 ./agent0
+``` 
+
+
+#### To Run in Non interactive mode
+You can also run the agent in non interactive mode by passing a message as an argument
+```bash
+cd bin
+./agent0 -p "What is the current time?"  
 ```
+
 
 
 #### To Run in Non interactive mode
@@ -69,3 +98,4 @@ agent ->> user : Returns final response to user <br/> e.g. "The current time is:
         - a method to call the tool e.g `Call(...)`
 
       - Tools are registered with the agent in `agent.go`
+
