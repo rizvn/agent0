@@ -4,7 +4,6 @@ import (
 	"agent0/agent"
 	"context"
 	"flag"
-	"fmt"
 	"log/slog"
 	"os"
 )
@@ -30,12 +29,11 @@ func main() {
 
 	// if prompt provided on cli
 	if prompt != "" {
-		// request resonse mode
-		response, err := a.DirectResponse(context.TODO(), prompt)
+		// request response mode
+		err := a.DirectResponse(context.TODO(), prompt)
 		if err != nil {
 			slog.Error(err.Error(), "err", err)
 		}
-		fmt.Println(response)
 	} else {
 		// interactive mode
 		err = a.Loop()

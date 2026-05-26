@@ -117,7 +117,7 @@ func (a *Agent) Loop() error {
 		}
 
 		out := make(chan string)
-		channelToStdOut(out)
+		_ = channelToStdOut(out)
 
 		if err := a.GenerateResponse(prompt, out, true); err != nil {
 			slog.Error("failed to generate response", "error", err)
@@ -177,7 +177,7 @@ func (a *Agent) GenerateResponse(
 			// stop if there are no tool calls or finish reason is stop
 			if len(choice.Message.ToolCalls) == 0 || choice.FinishReason == "stop" {
 				if !streamIntermediateMessages {
-					fmt.Println(choice.Message.Content)
+					out <- fmt.Sprintln(choice.Message.Content)
 				}
 				return nil
 			}
@@ -294,27 +294,27 @@ func (a *Agent) streamNextMessage(
 // DirectResponse sends a prompt to the agent and prints the response to stdout
 func (a *Agent) DirectResponse(
 	ctx context.Context,
-	prompt string) (string, error) {
+	prompt string) error {
 
 	// make channel for output
 	out := make(chan string)
 
-	channelToStdOut(out)
+	done := channelToStdOut(out)
 
 	if err := a.GenerateResponse(prompt, out, false); err != nil {
-		return "", util.DetailedError("Unable to generate response", err)
+		return util.DetailedError("Unable to generate response", err)
 	}
 
-	outStr := <-out
-
-	return outStr, nil
+	<-done
+	return nil
 }
 
 // channelToStdOut writes the contents of a channel to stdout.
 // - out is the channel to read from.
 // It is expected that the channel will be closed when done
 // and this function will return at that point.
-func channelToStdOut(out <-chan string) {
+func channelToStdOut(out <-chan string) <-chan bool {
+	done := make(chan bool)
 	// write output streamNextMessage
 	go func() {
 		for s := range out {
@@ -323,7 +323,9 @@ func channelToStdOut(out <-chan string) {
 				slog.Error("Unable to write to stdout", "err", err)
 			}
 		}
+		done <- true
 	}()
+	return done
 }
 
 // mergeStreamResponse merges a chunk response from the stream
